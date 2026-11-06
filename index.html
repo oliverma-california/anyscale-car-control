@@ -20,6 +20,9 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
+  /* Clip to the screen so the scaled canvas can never widen the page (phones would zoom out) */
+  html { overflow: hidden; }
+  body { position: fixed; inset: 0; }
   body {
     background: var(--bg);
     overflow: hidden;
@@ -33,7 +36,9 @@
   button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 1.5px solid var(--blue-light); outline-offset: 1px; }
 
   /* The design is a 450×286 canvas; it is scaled to fit the window. */
-  .stage { width: 450px; height: 286px; position: relative; transform-origin: center; flex: none; }
+  /* Sized with CSS zoom (not a scale transform) so Safari draws faded/filtered layers sharp */
+  .stage { width: 450px; height: 286px; position: relative; flex: none; transform-origin: center; }
+  .stage.m { width: 260px; height: 440px; }
   .abs { position: absolute; }
   .img { display: block; width: 100%; height: 100%; }
   .t9 { font-size: 9px; line-height: normal; }
@@ -177,6 +182,7 @@
   /* In-page windows */
   .win { position: absolute; display: flex; flex-direction: column; background: #fff; border-radius: 8px; overflow: hidden;
          box-shadow: 0 6px 20px rgba(0, 10, 40, .55), 0 0 0 .5px rgba(255,255,255,.25); animation: win-in .18s ease-out; outline: none; }
+  .win:focus-visible { outline: none; }
   .win.closing { animation: win-out .14s ease-in forwards; }
   @keyframes win-in { from { opacity: 0; transform: scale(.94); } }
   @keyframes win-out { to { opacity: 0; transform: scale(.94); } }
@@ -229,6 +235,58 @@
   /* Toast */
   .toast { left: 190px; top: 268px; width: 140px; text-align: center; font-size: 7px; color: #fff; opacity: 0; transition: opacity .25s; pointer-events: none; }
   .toast.show { opacity: .9; }
+
+
+  /* ---------- Phone layout (stage.m): single column, 260×440 canvas ---------- */
+  .stage.m .hex { left: -18px; top: 150px; }
+  .stage.m .header { left: 8px; top: 8px; width: 244px; }
+  .stage.m .logo-left { left: 18px; top: 18px; }
+  .stage.m .logo-x { left: 40px; top: 19px; }
+  .stage.m .logo-any { left: 52px; top: 18px; }
+  .stage.m .power { left: 221px; top: 16px; }
+  /* Bigger invisible tap areas for the small round buttons */
+  .stage.m .power::before, .stage.m .help::before, .stage.m .vol-btn::before { content: ""; position: absolute; inset: -6px; }
+  /* Larger window title bar and close button for touch */
+  .stage.m .win .bar { height: 21px; padding: 0 4px 0 5px; }
+  .stage.m .win .ttl { font-size: 8.5px; }
+  .stage.m .win .wdot { width: 13px; height: 13px; }
+  .stage.m .win .wdot img { left: 2.5px; top: 2.5px; width: 8px; height: 8px; }
+  .stage.m .win .x { width: 15px; height: 15px; }
+  .stage.m .win .x::before, .stage.m .win .x::after { left: 4px; top: 7px; width: 7px; height: 1px; }
+
+  .stage.m .tile { width: 118px !important; }
+  .stage.m .tile[data-win="camera"] { left: 8px !important;   top: 55px !important; }
+  .stage.m .tile[data-win="lidar"]  { left: 134px !important; top: 55px !important; }
+  .stage.m #car-tile                { left: 8px !important;   top: 125px !important; }
+  .stage.m .tile[data-win="server"] { left: 134px !important; top: 125px !important; }
+  /* Wider tiles: draw the rounded card in CSS so corners don't stretch */
+  .stage.m .tile .bg img { display: none; }
+  .stage.m .tile .bg { border-radius: 8px; background: var(--tile-off); transition: background .2s; }
+  .stage.m .tile[aria-pressed="true"] .bg { background: #fff; }
+
+  .stage.m .ip { left: 8px; top: 197px; width: 244px; }
+  .stage.m .ip .field { left: 198.96px; }
+  .stage.m .ip.editing .field, .stage.m .ip.filled .field { left: 26px; width: 218px; }
+
+  .stage.m .panel { left: 8px; top: 230px; width: 244px; background: #fff; border-radius: 8px; }
+  .stage.m .panel > .bg, .stage.m .sel { display: none; }
+  .stage.m .divider { width: 244px; }
+  .stage.m .opt { width: 230px; transition: background .2s; }
+  .stage.m .opt[aria-checked="true"] { background: var(--chip); }
+  .stage.m .opt .lbl { width: 180px; }
+  .stage.m .help { left: 222px; }
+  .stage.m .tip { left: auto; right: 4px; width: 170px; }
+
+  .stage.m .speed { left: 8px; top: 364px; width: 244px; }
+  .stage.m .speed .chip { left: 213.29px; }
+
+  .stage.m .vol-btn { left: 8px; top: 398px; }
+  .stage.m .slider { left: 36px; top: 402px; width: 216px; background: #fff; border-radius: 6.5px; }
+  .stage.m .slider .track, .stage.m .slider .fill img { display: none; }
+  .stage.m .slider .fill { background: var(--bg); border-radius: 4.5px; }
+
+  .stage.m .toast { left: 40px; top: 426px; width: 180px; }
+  .stage.m .win { border-radius: 10px; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -359,12 +417,32 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-  /* Fit the 450×286 canvas to the window */
-  let stageScale = 1, onScale = () => {};
+  /* Fit the canvas to the window: the Figma layout (450×286) on wide screens,
+     a single-column layout (260×440) on phones held upright. */
+  let stageScale = 1, SW = 450, SH = 286, isPhone = false, onScale = () => {};
+  const useZoom = CSS.supports('zoom', '2');
+  // Pointer position in canvas units. Worked out from the layout rather than measured,
+  // because browsers report element sizes differently under zoom.
+  function toStage(e) {
+    const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+    return { x: (e.clientX - (vw - SW * stageScale) / 2) / stageScale,
+             y: (e.clientY - (vh - SH * stageScale) / 2) / stageScale };
+  }
+  const px = (el, prop) => parseFloat(getComputedStyle(el)[prop]);
   function fit() {
-    stageScale = Math.min(innerWidth / 450, innerHeight / 286);
-    stage.style.transform = `scale(${stageScale})`;
-    onScale();
+    // Visible area (innerWidth can include overflow on phones)
+    const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+    const phone = vw < 600 && vh > vw;
+    const changed = phone !== isPhone;
+    isPhone = phone;
+    stage.classList.toggle('m', phone);
+    [SW, SH] = phone ? [260, 440] : [450, 286];
+    stageScale = Math.min(vw / SW, vh / SH);
+    // zoom lays the page out at its final size, so every layer is drawn crisp.
+    // A scale transform draws at 450×286 and stretches, which Safari blurs for faded or filtered elements.
+    if (useZoom) stage.style.zoom = stageScale;
+    else stage.style.transform = `scale(${stageScale})`;
+    onScale(changed);
   }
   addEventListener('resize', fit); fit();
 
@@ -472,12 +550,23 @@
 
   /* ---------- In-page windows ---------- */
   let zTop = 20;
-  onScale = () => Object.values(S.wins).forEach(w => w.resize && w.resize());
-  const WINS = {
-    camera: { title: 'Camera Feed',       icon: 'assets/camera.png', w: 206, h: 140, x: 172, y: 52, build: buildCamera },
-    lidar:  { title: 'LiDAR Point-Cloud', icon: 'assets/cloud.png',  w: 206, h: 140, x: 234, y: 92, build: buildLidar },
-    server: { title: 'Connect to Server', icon: 'assets/wifi.png',   w: 176, h: 150, x: 204, y: 124, build: buildServer },
+  onScale = layoutChanged => {
+    Object.values(S.wins).forEach(w => { if (layoutChanged) placeWin(w); w.resize && w.resize(); });
+    if (layoutChanged) setVol(vol);   // slider width differs between layouts
   };
+  const WINS = {
+    camera: { title: 'Camera Feed',       icon: 'assets/camera.png', build: buildCamera,
+              desk: { w: 206, h: 140, x: 172, y: 52 },  phone: { w: 248, h: 176, x: 6, y: 50 } },
+    lidar:  { title: 'LiDAR Point-Cloud', icon: 'assets/cloud.png',  build: buildLidar,
+              desk: { w: 206, h: 140, x: 234, y: 92 },  phone: { w: 248, h: 176, x: 6, y: 62 } },
+    server: { title: 'Connect to Server', icon: 'assets/wifi.png',   build: buildServer,
+              desk: { w: 176, h: 150, x: 204, y: 124 }, phone: { w: 248, h: 200, x: 6, y: 74 } },
+  };
+  const geom = def => isPhone ? def.phone : def.desk;
+  function placeWin(win) {
+    const g = geom(WINS[win.key]);
+    Object.assign(win.el.style, { left: g.x + 'px', top: g.y + 'px', width: g.w + 'px', height: g.h + 'px' });
+  }
 
   function focusWin(key) {
     Object.entries(S.wins).forEach(([k, w]) => w.el.classList.toggle('front', k === key));
@@ -493,7 +582,6 @@
     el.tabIndex = -1;
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', def.title);
-    Object.assign(el.style, { left: def.x + 'px', top: def.y + 'px', width: def.w + 'px', height: def.h + 'px' });
     el.innerHTML = `
       <header class="bar">
         <span class="wdot"><img src="${def.icon}" alt=""></span>
@@ -504,6 +592,7 @@
     stage.appendChild(el);
     const win = { key, el, body: $('.body', el) };
     S.wins[key] = win;
+    placeWin(win);
     Object.assign(win, def.build(win.body, win) || {});
     $('.x', el).addEventListener('click', () => closeWin(key));
     el.addEventListener('pointerdown', () => focusWin(key), true);
@@ -532,16 +621,17 @@
     bar.addEventListener('pointerdown', e => {
       if (e.target.closest('.x') || e.button > 0) return;
       e.preventDefault();
-      start = { x: e.clientX, y: e.clientY, l: win.el.offsetLeft, t: win.el.offsetTop };
+      start = { x: e.clientX, y: e.clientY, l: parseFloat(win.el.style.left), t: parseFloat(win.el.style.top) };
       bar.setPointerCapture(e.pointerId);
       win.el.classList.add('dragging');
     });
     bar.addEventListener('pointermove', e => {
       if (!start) return;
-      const l = Math.max(0, Math.min(450 - def.w, start.l + (e.clientX - start.x) / stageScale));
-      const t = Math.max(0, Math.min(286 - def.h, start.t + (e.clientY - start.y) / stageScale));
+      const g = geom(def);
+      const l = Math.max(0, Math.min(SW - g.w, start.l + (e.clientX - start.x) / stageScale));
+      const t = Math.max(0, Math.min(SH - g.h, start.t + (e.clientY - start.y) / stageScale));
       win.el.style.left = l + 'px'; win.el.style.top = t + 'px';
-      def.x = l; def.y = t;               // reopen where it was left
+      g.x = l; g.y = t;                   // reopen where it was left
     });
     const end = () => { start = null; win.el.classList.remove('dragging'); };
     bar.addEventListener('pointerup', end);
@@ -569,7 +659,7 @@
     const ctx = c.getContext('2d');
     const api = { c, ctx, W: 0, H: 0 };
     api.resize = () => {
-      api.W = body.clientWidth; api.H = body.clientHeight;
+      api.W = px(body, 'width'); api.H = px(body, 'height');
       const k = stageScale * (devicePixelRatio || 1);
       c.width = Math.round(api.W * k); c.height = Math.round(api.H * k);
       ctx.setTransform(k, 0, 0, k, 0, 0);
@@ -1054,7 +1144,7 @@
   let vol = 31, lastVol = 31;
   function setVol(v) {
     vol = Math.round(Math.max(0, Math.min(100, v)));
-    const x = vol / 100 * 87;              // knob left within track
+    const x = vol / 100 * (px(slider, 'width') - 13);   // knob left within track
     knob.style.left = x + 'px';
     fill.style.left = (x + 5) + 'px';
     slider.setAttribute('aria-valuenow', vol);
@@ -1064,8 +1154,10 @@
     volBtn.setAttribute('aria-label', vol === 0 ? 'Unmute' : 'Mute');
   }
   setVol(vol);
-  const scale = () => slider.getBoundingClientRect().width / 100;
-  function fromEvent(e) { const r = slider.getBoundingClientRect(); return ((e.clientX - r.left) / scale() - 6.5) / 87 * 100; }
+  function fromEvent(e) {
+    const x = toStage(e).x - px(slider, 'left');
+    return (x - 6.5) / (px(slider, 'width') - 13) * 100;
+  }
   slider.addEventListener('pointerdown', e => {
     if (stage.classList.contains('off') || e.button > 0) return;
     e.preventDefault();
