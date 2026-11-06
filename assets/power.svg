@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1">
+<circle id="Ellipse 1" cx="10.5" cy="10.5" r="10.5" fill="#0066FF"/>
+<g id="Power" clip-path="url(#clip0_0_34)">
+<path id="Icon" d="M14.475 6.4C15.2615 7.18674 15.797 8.18903 16.0139 9.28012C16.2308 10.3712 16.1193 11.5021 15.6935 12.5298C15.2677 13.5576 14.5468 14.436 13.6218 15.054C12.6968 15.672 11.6093 16.0018 10.4969 16.0018C9.38443 16.0018 8.29697 15.672 7.37198 15.054C6.447 14.436 5.72603 13.5576 5.30023 12.5298C4.87443 11.5021 4.76293 10.3712 4.97982 9.28012C5.19672 8.18903 5.73226 7.18674 6.51875 6.4M10.5 3.5V9.75" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_34">
+<rect width="15" height="15" fill="white" transform="translate(3 2.25)"/>
+</clipPath>
+</defs>
+</svg>
