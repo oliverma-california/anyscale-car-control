@@ -794,7 +794,7 @@
       const { W, H } = cv;
       fpsAcc += dt; fpsN++;
       if (fpsAcc > .5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
-      const speedSetting = curSpeed;                // 1–99 from the Max Speed control
+      const speedSetting = curSpeed;                // 1–15 from the Max Speed control
       // Ease toward the target speed so stopping and resuming look like braking and accelerating
       const target = S.stopped ? 0 : 3 + speedSetting * 0.45;   // m/s
       vNow += (target - vNow) * Math.min(1, dt * 2.5);
@@ -1161,15 +1161,15 @@
 
   /* Max speed dropdown */
   const speed = $('#speed'), sBtn = $('#speed-btn'), sVal = $('#speed-val'), menu = $('#speed-menu');
-  const speeds = [5, 10, 15, 20, 25, 30];
+  const speeds = [5, 10, 15];
   speeds.forEach(v => {
     const b = document.createElement('button');
     b.textContent = v; b.setAttribute('role', 'option'); b.tabIndex = -1;
     b.addEventListener('click', e => { e.stopPropagation(); setSpeed(v); closeMenu(); sVal.focus(); });
     menu.appendChild(b);
   });
-  // Max speed: type any whole number 1–99, or pick a preset from the menu.
-  const MIN_SPEED = 1, MAX_SPEED = 99;
+  // Max speed: type any whole number 1–15, or pick a preset from the menu.
+  const MIN_SPEED = 1, MAX_SPEED = 15;
   let curSpeed = 10;
   function markCur() {
     $$('button', menu).forEach(b => { const on = +b.textContent === curSpeed; b.classList.toggle('cur', on); b.setAttribute('aria-selected', on); });
