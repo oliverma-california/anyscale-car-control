@@ -58,10 +58,15 @@
   .logo-left img { position: absolute; left: -15.38%; top: -15.38%; width: 130.77%; height: 130.77%; max-width: none; }
   .logo-x { left: 42px; top: 21px; font: italic 700 12px/normal 'Inter', sans-serif; color: #000; white-space: nowrap; }
   .logo-any { left: 54px; top: 20px; width: 72px; height: 17px; object-fit: cover; }
-  .power { left: 409px; top: 18px; width: 21px; height: 21px; border-radius: 50%; transition: filter .2s, transform .15s; }
-  .power:hover { transform: scale(1.08); }
-  .power:active { transform: scale(.95); }
-  .stage.off .power { filter: grayscale(1) brightness(1.1); }
+  /* Stop button: red stop square while driving; blue play triangle to resume once stopped */
+  .stop { left: 409px; top: 18px; width: 21px; height: 21px; border-radius: 50%; background: #e5484d; transition: background .2s, transform .15s; }
+  .stop:hover { transform: scale(1.08); }
+  .stop:active { transform: scale(.95); }
+  .stop svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .stop .resume, .stop[aria-pressed="true"] .halt { display: none; }
+  .stop[aria-pressed="true"] { background: var(--blue); }
+  .stop[aria-pressed="true"] .resume { display: block; }
+  .stage.stopped .hex { animation: none; }
 
   /* Tiles */
   .tile { width: 66px; height: 62px; text-align: left; transition: transform .15s; }
@@ -169,10 +174,12 @@
   .login-card .ico .plug { left: 3px; top: 3px; width: 15px; height: 15px; }
   .login-card h1 { left: 42px; top: 13px; margin: 0; font-size: 11px; font-weight: 500; line-height: 21px; color: var(--text); white-space: nowrap; }
   .login-card .sub { left: 14px; top: 42px; width: 192px; margin: 0; font-size: 7.5px; font-weight: 300; line-height: 1.35; color: var(--text-muted); }
-  .login-field { left: 14px; top: 66px; width: 192px; height: 23px; background: var(--chip); border-radius: 8px; transition: box-shadow .2s; }
+  .login-field { left: 14px; top: 66px; width: 192px; height: 23px; background: var(--chip); transition: box-shadow .2s;
+                 /* Left corners follow the globe circle (10.5px radius, 1px inset); right corners stay 8px */
+                 border-radius: 11.5px 8px 8px 11.5px; }
   .login-field .dot { left: 1px; top: 1px; width: 21px; height: 21px; }
   .login-field .globe { left: 4px; top: 4px; width: 15px; height: 15px; }
-  .login-field input { position: absolute; inset: 0; width: 100%; border: 0; background: transparent; border-radius: 8px; padding: 0 8px 0 29px;
+  .login-field input { position: absolute; inset: 0; width: 100%; border: 0; background: transparent; border-radius: inherit; padding: 0 8px 0 29px;
                        font: 300 9px/23px 'Archivo', sans-serif; color: #000; outline: none; }
   .login-field input::placeholder { color: #a9a29d; }
   .login-field:focus-within { box-shadow: inset 0 0 0 1px var(--blue-light); }
@@ -198,7 +205,7 @@
   @keyframes shake { 20%, 60% { transform: translateX(-2px); } 40%, 80% { transform: translateX(2px); } }
   .ip.locked .field { background: #f4f1ef; }
   .ip.locked input { color: var(--text-muted); cursor: default; }
-  .stage.off .power::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--blue); animation: ping 1.8s ease-out infinite; }
+  .stage.stopped .stop::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--blue); animation: ping 1.8s ease-out infinite; }
   @keyframes ping { 0% { transform: scale(.9); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
 
   /* In-page windows */
@@ -273,9 +280,9 @@
   .stage.m .logo-left { left: 18px; top: 18px; }
   .stage.m .logo-x { left: 40px; top: 19px; }
   .stage.m .logo-any { left: 52px; top: 18px; }
-  .stage.m .power { left: 221px; top: 16px; }
+  .stage.m .stop { left: 221px; top: 16px; }
   /* Bigger invisible tap areas for the small round buttons */
-  .stage.m .power::before, .stage.m .help::before, .stage.m .vol-btn::before { content: ""; position: absolute; inset: -6px; }
+  .stage.m .stop::before, .stage.m .help::before, .stage.m .vol-btn::before { content: ""; position: absolute; inset: -6px; }
   /* Larger window title bar and close button for touch */
   .stage.m .win .bar { height: 21px; padding: 0 4px 0 5px; }
   .stage.m .win .ttl { font-size: 8.5px; }
@@ -354,8 +361,9 @@
 
   <!-- Level 2: control panel, shown once the car is connected -->
   <div class="dash" id="dash">
-  <button class="abs power" id="power" aria-pressed="false" aria-label="Disconnect from car">
-    <img class="img" src="assets/power.svg" alt="">
+  <button class="abs stop" id="stop" aria-pressed="false" aria-label="Stop the car" title="Stop the car">
+    <svg class="halt" viewBox="0 0 21 21" aria-hidden="true"><rect x="7" y="7" width="7" height="7" rx="1.2" fill="#fff"/></svg>
+    <svg class="resume" viewBox="0 0 21 21" aria-hidden="true"><path d="M8.3 6.6v7.8a.6.6 0 0 0 .9.5l6.1-3.9a.6.6 0 0 0 0-1L9.2 6.1a.6.6 0 0 0-.9.5z" fill="#fff"/></svg>
   </button>
 
   <!-- Tiles -->
@@ -504,11 +512,12 @@
 
   /* ---------- App state ----------
      Two levels: a login card asks for the car IP. Once the car connects, the full control
-     panel is revealed. Power or the car tile disconnects and returns to the login card. */
-  const S = { power: false, car: 'off', server: 'off', wins: {} };
+     panel is revealed. The car tile disconnects and returns to the login card.
+     The stop button in the header halts the car (and resumes it) without disconnecting. */
+  const S = { power: false, car: 'off', server: 'off', stopped: false, wins: {} };
   const ipRe = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
   const currentModel = () => $('.opt[aria-checked="true"]').dataset.model;
-  const power = $('#power'), carTile = $('#car-tile');
+  const stopBtn = $('#stop'), carTile = $('#car-tile');
   const winTiles = $$('.tile[data-win]');
   const loginForm = $('#login-form'), loginIp = $('#login-ip'), loginField = $('#login-field'),
         loginBtn = $('#login-btn'), loginErr = $('#login-err');
@@ -519,7 +528,10 @@
     stage.classList.toggle('off', !on);
     stage.classList.toggle('login', !on);
     stage.classList.toggle('live', on);
-    power.setAttribute('aria-pressed', on);
+    stage.classList.toggle('stopped', S.stopped);
+    stopBtn.setAttribute('aria-pressed', S.stopped);
+    stopBtn.setAttribute('aria-label', S.stopped ? 'Resume driving' : 'Stop the car');
+    stopBtn.title = S.stopped ? 'Resume driving' : 'Stop the car';
     controls().forEach(el => {
       if (el.id === 'slider') { el.tabIndex = on ? 0 : -1; el.setAttribute('aria-disabled', !on); }
       else el.disabled = !on;
@@ -579,9 +591,18 @@
     Object.keys(S.wins).forEach(k => closeWin(k, true));
     server.disconnect(true);
     closeMenu();
-    S.car = 'off'; S.power = false; render();
+    S.car = 'off'; S.power = false; S.stopped = false; render();
     loginIp.focus({ preventScroll: true });
     toast('Disconnected from car');
+  }
+
+  /* Stop / resume the car (stays connected) */
+  function toggleStop() {
+    if (S.car !== 'on') return;
+    S.stopped = !S.stopped;
+    render();
+    toast(S.stopped ? 'Car stopped' : 'Resuming drive');
+    if (S.server === 'on') server.log(S.stopped ? 'stop command sent → car halted' : 'resume command sent → driving');
   }
 
   loginForm.addEventListener('submit', e => { e.preventDefault(); connect(); });
@@ -590,7 +611,7 @@
     loginField.classList.remove('invalid');
     loginErr.textContent = '';
   });
-  power.addEventListener('click', disconnect);
+  stopBtn.addEventListener('click', toggleStop);
   carTile.addEventListener('click', disconnect);
   carTile.title = 'Disconnect from car';
   carTile.setAttribute('aria-label', 'Connected to car. Disconnect');
@@ -751,7 +772,7 @@
     body.classList.add('dark');
     const cv = makeCanvas(body), ctx = cv.ctx;
     const camH = 1.4, NEAR = 1.6;
-    let travelled = 0, fpsAcc = 0, fpsN = 0, fps = 60;
+    let travelled = 0, fpsAcc = 0, fpsN = 0, fps = 60, vNow = S.stopped ? 0 : 3 + curSpeed * 0.45;
     const rnd = (a, b) => a + Math.random() * (b - a);
     // Objects in camera coordinates: ego sits in the right lane, so lane edges are at x = -5.4, -1.8 (dashed) and 1.8
     const objs = [
@@ -774,7 +795,11 @@
       fpsAcc += dt; fpsN++;
       if (fpsAcc > .5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
       const speedSetting = curSpeed;                // 1–99 from the Max Speed control
-      const v = 3 + speedSetting * 0.45;            // m/s
+      // Ease toward the target speed so stopping and resuming look like braking and accelerating
+      const target = S.stopped ? 0 : 3 + speedSetting * 0.45;   // m/s
+      vNow += (target - vNow) * Math.min(1, dt * 2.5);
+      if (S.stopped && vNow < .05) vNow = 0;
+      const v = vNow;
       travelled += v * dt;
       const model = currentModel();
       const showLanes = model !== 'Object Detection';
@@ -897,6 +922,7 @@
       hudText(`${fps} FPS`, W - 4, 9.2, '#fff', 'right');
       hudText(model, 4, H - 4, '#fff');
       hudText(`${(v * 3.6).toFixed(0)} km/h · max ${speedSetting}`, W - 4, H - 4, '#fff', 'right');
+      if (S.stopped) hudText('■ STOPPED', W / 2 - 18, 9.2, '#ff6b6b');
     }
     function hudText(s, x, y, col, align = 'left') {
       ctx.font = '500 6px Archivo, sans-serif'; ctx.textAlign = align;
