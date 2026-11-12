@@ -58,10 +58,15 @@
   .logo-left img { position: absolute; left: -15.38%; top: -15.38%; width: 130.77%; height: 130.77%; max-width: none; }
   .logo-x { left: 42px; top: 21px; font: italic 700 12px/normal 'Inter', sans-serif; color: #000; white-space: nowrap; }
   .logo-any { left: 54px; top: 20px; width: 72px; height: 17px; object-fit: cover; }
-  .power { left: 409px; top: 18px; width: 21px; height: 21px; border-radius: 50%; transition: filter .2s, transform .15s; }
-  .power:hover { transform: scale(1.08); }
-  .power:active { transform: scale(.95); }
-  .stage.off .power { filter: grayscale(1) brightness(1.1); }
+  /* Stop button: black with a white stop square while driving; blue play triangle to resume once stopped */
+  .stop { left: 409px; top: 18px; width: 21px; height: 21px; border-radius: 50%; background: #000; transition: background .2s, transform .15s; }
+  .stop:hover { transform: scale(1.08); }
+  .stop:active { transform: scale(.95); }
+  .stop svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .stop .resume, .stop[aria-pressed="true"] .halt { display: none; }
+  .stop[aria-pressed="true"] { background: var(--blue); }
+  .stop[aria-pressed="true"] .resume { display: block; }
+  .stage.stopped .hex { animation: none; }
 
   /* Tiles */
   .tile { width: 66px; height: 62px; text-align: left; transition: transform .15s; }
@@ -71,11 +76,12 @@
   .tile .bg { position: absolute; inset: 0; }
   .tile .bg img { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity .2s; }
   .tile .bg .on { opacity: 0; }
-  .tile[aria-pressed="true"] .bg .on { opacity: 1; }
+  .tile[aria-pressed="true"] .bg .on, .stage.live .tile .bg .on { opacity: 1; }
+  .stage.live .tile .label { color: var(--text); }
   .tile .dot { left: 7px; top: 7px; width: 21px; height: 21px; }
   .tile .dot img { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity .2s; }
   .tile .dot .on { opacity: 0; }
-  .tile[aria-pressed="true"] .dot .on { opacity: 1; }
+  .tile[aria-pressed="true"] .dot .on, .stage.live .tile .dot .on { opacity: 1; }
   .tile .ico { object-fit: cover; pointer-events: none; }
   .tile .label { left: 7px; width: 56px; color: var(--text-muted); transition: color .2s; }
   .tile[aria-pressed="true"] .label { color: var(--text); }
@@ -91,7 +97,7 @@
   .help { left: 110px; top: 7px; width: 15px; height: 15px; border-radius: 50%; }
   .help span { position: absolute; left: 5px; top: 3px; color: #fff; font-size: 9px; font-weight: 500; line-height: normal; }
   .help:hover img { filter: brightness(.92); }
-  .tip { left: -4px; top: 30px; width: 140px; padding: 6px 8px; background: #fff; border-radius: 6px; font-size: 7px; line-height: 1.35; color: var(--text-muted);
+  .tip { left: 292px; top: 96px; width: 140px; padding: 6px 8px; background: #fff; border-radius: 6px; font-size: 7px; line-height: 1.35; color: var(--text-muted);
          box-shadow: 0 4px 12px rgba(0,0,0,.25); opacity: 0; transform: translateY(-3px); pointer-events: none; transition: opacity .15s, transform .15s; z-index: 5; }
   .tip.show { opacity: 1; transform: none; }
   .divider { left: 0; top: 28.5px; width: 132px; height: 1px; }
@@ -99,7 +105,7 @@
   .opt { left: 7px; width: 118px; height: 27px; text-align: left; border-radius: 8px; }
   .opt:hover:not(:disabled):not([aria-checked="true"]) { background: rgba(237,231,227,.45); }
   .opt .dot { left: 3px; top: 3px; width: 21px; height: 21px; }
-  .opt .lbl { left: 34px; top: 6px; width: 80px; color: var(--text); }
+  .opt .lbl { left: 34px; top: 0; height: 27px; line-height: 27px; width: 80px; color: var(--text); }   /* fills the 27px option so the text sits centred */
   .opt .ico { left: 8px; top: 8px; width: 11px; height: 11px; object-fit: cover; }
   .opt .ico.line { left: 7.66px; top: 7.63px; width: 11.67px; height: 10.74px; }
   .opt .ico.flip { transform: scaleX(-1); }
@@ -159,24 +165,47 @@
   .slider .readout { position: absolute; left: 50%; top: -12px; transform: translateX(-50%); font-size: 7px; color: #fff; opacity: 0; transition: opacity .15s; white-space: nowrap; pointer-events: none; }
   .slider.drag .readout, .slider:focus-visible .readout { opacity: .9; }
 
-  /* Off state */
-  .stage.off .ctl { opacity: .55; }
-  .ctl { transition: opacity .3s; }
+  /* Level 1: login card. Only this shows until the car is connected */
+  .login-card { left: 115px; top: 72px; width: 220px; height: 142px; background: #fff; border-radius: 10px;
+                box-shadow: 0 8px 24px rgba(0, 10, 40, .45); transition: opacity .35s, transform .35s, visibility 0s; }
+  .stage:not(.login) .login-card { opacity: 0; visibility: hidden; transform: scale(.96); pointer-events: none;
+                                   transition: opacity .35s, transform .35s, visibility 0s .35s; }
+  .login-card .ico { left: 14px; top: 13px; width: 21px; height: 21px; }
+  .login-card .ico .plug { left: 3px; top: 3px; width: 15px; height: 15px; }
+  .login-card h1 { left: 42px; top: 13px; margin: 0; font-size: 11px; font-weight: 500; line-height: 21px; color: var(--text); white-space: nowrap; }
+  .login-card .sub { left: 14px; top: 42px; width: 192px; margin: 0; font-size: 7.5px; font-weight: 300; line-height: 1.35; color: var(--text-muted); }
+  .login-field { left: 14px; top: 66px; width: 192px; height: 23px; background: var(--chip); transition: box-shadow .2s;
+                 /* Left corners follow the globe circle (10.5px radius, 1px inset); right corners stay 8px */
+                 border-radius: 11.5px 8px 8px 11.5px; }
+  .login-field .dot { left: 1px; top: 1px; width: 21px; height: 21px; }
+  .login-field .globe { left: 4px; top: 4px; width: 15px; height: 15px; }
+  .login-field input { position: absolute; inset: 0; width: 100%; border: 0; background: transparent; border-radius: inherit; padding: 0 8px 0 29px;
+                       font: 300 9px/23px 'Archivo', sans-serif; color: #000; outline: none; }
+  .login-field input::placeholder { color: #a9a29d; }
+  .login-field:focus-within { box-shadow: inset 0 0 0 1px var(--blue-light); }
+  .login-field.invalid { box-shadow: inset 0 0 0 1px #e5484d; }
+  .login-field.shake { animation: shake .4s; }
+  .login-field.busy input { color: var(--text-muted); }
+  .login-btn { left: 14px; top: 96px; width: 192px; height: 23px; background: var(--blue); color: #fff; border-radius: 8px;
+               font-size: 9px; font-weight: 500; text-align: center; transition: filter .2s, transform .15s; }
+  .login-btn:hover:not(:disabled) { filter: brightness(1.1); }
+  .login-btn:active:not(:disabled) { transform: scale(.98); }
+  .login-btn:disabled { cursor: progress; animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .7; } }
+  .login-card .err { left: 14px; top: 125px; width: 192px; margin: 0; font-size: 7px; line-height: 1.2; color: #e5484d; }
 
-  /* Flow states: locked tiles until the car is connected; car tile needs an IP */
-  .tile .lock { right: 6px; top: 6px; width: 7px; height: 8.4px; color: var(--text-muted); opacity: 0; transition: opacity .2s; }
-  .tile.locked .lock { opacity: .8; }
-  .tile.locked { cursor: not-allowed; }
-  .tile.locked .bg, .tile.locked .dot, .tile.locked .ico, .tile.locked .label { opacity: .45; transition: opacity .25s; }
-  .tile.locked:hover { transform: none; }
-  .tile.needs-ip .bg, .tile.needs-ip .dot, .tile.needs-ip .ico, .tile.needs-ip .label { opacity: .7; }
+  /* Level 2: the control panel, revealed once the car is connected */
+  .dash { position: absolute; inset: 0; transition: opacity .4s, visibility 0s; }
+  .stage.login .dash { opacity: 0; visibility: hidden; transition: opacity .4s, visibility 0s .4s; }
+  /* (Each level turns visible at once when revealed and only hides after fading out, so focus can move to it straight away) */
+
   .tile.unlocked-flash .bg { animation: unlock .6s ease-out; }
   @keyframes unlock { 0% { filter: brightness(1.25); } 100% { filter: none; } }
   .ip.shake { animation: shake .4s; }
   @keyframes shake { 20%, 60% { transform: translateX(-2px); } 40%, 80% { transform: translateX(2px); } }
   .ip.locked .field { background: #f4f1ef; }
   .ip.locked input { color: var(--text-muted); cursor: default; }
-  .stage.off .power::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--blue); animation: ping 1.8s ease-out infinite; }
+  .stage.stopped .stop::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--blue); animation: ping 1.8s ease-out infinite; }
   @keyframes ping { 0% { transform: scale(.9); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
 
   /* In-page windows */
@@ -199,6 +228,14 @@
   .win .x::after { transform: rotate(-45deg); }
   .win .x:hover { background: #e5484d; }
   .win .x:hover::before, .win .x:hover::after { background: #fff; }
+  /* Full-screen toggle (camera and LiDAR windows) */
+  .win .fs { flex: none; width: 11px; height: 11px; border-radius: 50%; background: var(--chip); position: relative; color: #3f3d3d; }
+  .win .fs svg { position: absolute; inset: 2.5px; width: 6px; height: 6px; }
+  .win .fs .shrink, .win.full .fs .grow { display: none; }
+  .win.full .fs .shrink { display: block; }
+  .win .fs:hover { background: var(--blue); color: #fff; }
+  .win.full { border-radius: 0; box-shadow: none; }
+  .win.full .bar { cursor: default; }
   .win .body { position: relative; flex: 1; min-height: 0; }
   .win canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .win .body.dark { background: #050d1f; }
@@ -243,26 +280,27 @@
   .stage.m .logo-left { left: 18px; top: 18px; }
   .stage.m .logo-x { left: 40px; top: 19px; }
   .stage.m .logo-any { left: 52px; top: 18px; }
-  .stage.m .power { left: 221px; top: 16px; }
+  .stage.m .stop { left: 221px; top: 16px; }
   /* Bigger invisible tap areas for the small round buttons */
-  .stage.m .power::before, .stage.m .help::before, .stage.m .vol-btn::before { content: ""; position: absolute; inset: -6px; }
+  .stage.m .stop::before, .stage.m .help::before, .stage.m .vol-btn::before { content: ""; position: absolute; inset: -6px; }
   /* Larger window title bar and close button for touch */
   .stage.m .win .bar { height: 21px; padding: 0 4px 0 5px; }
   .stage.m .win .ttl { font-size: 8.5px; }
   .stage.m .win .wdot { width: 13px; height: 13px; }
   .stage.m .win .wdot img { left: 2.5px; top: 2.5px; width: 8px; height: 8px; }
-  .stage.m .win .x { width: 15px; height: 15px; }
+  .stage.m .win .x, .stage.m .win .fs { width: 15px; height: 15px; }
+  .stage.m .win .fs svg { inset: 3.5px; width: 8px; height: 8px; }
   .stage.m .win .x::before, .stage.m .win .x::after { left: 4px; top: 7px; width: 7px; height: 1px; }
 
   .stage.m .tile { width: 118px !important; }
-  .stage.m .tile[data-win="camera"] { left: 8px !important;   top: 55px !important; }
-  .stage.m .tile[data-win="lidar"]  { left: 134px !important; top: 55px !important; }
-  .stage.m #car-tile                { left: 8px !important;   top: 125px !important; }
-  .stage.m .tile[data-win="server"] { left: 134px !important; top: 125px !important; }
+  .stage.m .tile[data-win="camera"] { left: 8px !important;   top: 125px !important; }
+  .stage.m .tile[data-win="lidar"]  { left: 134px !important; top: 125px !important; }
+  .stage.m #car-tile                { left: 8px !important;   top: 55px !important; }
+  .stage.m .tile[data-win="server"] { left: 134px !important; top: 55px !important; }
   /* Wider tiles: draw the rounded card in CSS so corners don't stretch */
   .stage.m .tile .bg img { display: none; }
   .stage.m .tile .bg { border-radius: 8px; background: var(--tile-off); transition: background .2s; }
-  .stage.m .tile[aria-pressed="true"] .bg { background: #fff; }
+  .stage.m .tile[aria-pressed="true"] .bg, .stage.m.live .tile .bg { background: #fff; }
 
   .stage.m .ip { left: 8px; top: 197px; width: 244px; }
   .stage.m .ip .field { left: 198.96px; }
@@ -275,7 +313,7 @@
   .stage.m .opt[aria-checked="true"] { background: var(--chip); }
   .stage.m .opt .lbl { width: 180px; }
   .stage.m .help { left: 222px; }
-  .stage.m .tip { left: auto; right: 4px; width: 170px; }
+  .stage.m .tip { left: 78px; top: 260px; width: 170px; }
 
   .stage.m .speed { left: 8px; top: 364px; width: 244px; }
   .stage.m .speed .chip { left: 213.29px; }
@@ -286,6 +324,7 @@
   .stage.m .slider .fill { background: var(--bg); border-radius: 4.5px; }
 
   .stage.m .toast { left: 40px; top: 426px; width: 180px; }
+  .stage.m .login-card { left: 20px; top: 128px; }
   .stage.m .win { border-radius: 10px; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -294,7 +333,7 @@
 </style>
 </head>
 <body>
-<main class="stage off" id="stage" aria-label="Anyscale car control panel">
+<main class="stage off login" id="stage" aria-label="Anyscale car control panel">
   <!-- Hex background -->
   <img class="abs hex" src="assets/hex-bg.svg" alt="">
 
@@ -303,44 +342,60 @@
   <div class="abs logo-left"><img src="assets/logo-left.png" alt=""></div>
   <p class="abs logo-x" style="margin:0">x</p>
   <img class="abs logo-any" src="assets/logo-anyscale.png" alt="Anyscale">
-  <button class="abs power" id="power" aria-pressed="false" aria-label="Power">
-    <img class="img" src="assets/power.svg" alt="">
+  <!-- Level 1: login card -->
+  <section class="abs login-card" id="login" aria-labelledby="login-title">
+    <span class="abs ico"><img class="abs img" src="assets/circle-blue.svg" alt=""><img class="abs plug" src="assets/plug.png" alt=""></span>
+    <h1 class="abs" id="login-title">Connect to your car</h1>
+    <p class="abs sub">Enter the car’s IP address to open the control panel.</p>
+    <form id="login-form" novalidate>
+      <div class="abs login-field" id="login-field">
+        <img class="abs dot" src="assets/circle-blue.svg" alt="">
+        <img class="abs globe" src="assets/globe.svg" alt="">
+        <input id="login-ip" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="Car IP address, e.g. 192.168.0.42"
+               aria-label="Car IP address" aria-describedby="login-err">
+      </div>
+      <button class="abs login-btn" id="login-btn" type="submit">Connect to Car</button>
+    </form>
+    <p class="abs err" id="login-err" role="alert"></p>
+  </section>
+
+  <!-- Level 2: control panel, shown once the car is connected -->
+  <div class="dash" id="dash">
+  <button class="abs stop" id="stop" aria-pressed="false" aria-label="Stop the car" title="Stop the car">
+    <svg class="halt" viewBox="0 0 21 21" aria-hidden="true"><rect x="7" y="7" width="7" height="7" rx="1.2" fill="#fff"/></svg>
+    <svg class="resume" viewBox="0 0 21 21" aria-hidden="true"><path d="M8.3 6.6v7.8a.6.6 0 0 0 .9.5l6.1-3.9a.6.6 0 0 0 0-1L9.2 6.1a.6.6 0 0 0-.9.5z" fill="#fff"/></svg>
   </button>
 
   <!-- Tiles -->
-  <button class="abs tile ctl" style="left:22px;top:66px" data-name="Camera feed" data-win="camera" aria-pressed="false">
-    <span class="bg"><img src="assets/tile.svg" alt=""><img class="on" src="assets/tile-active.svg" alt=""></span>
-    <span class="abs dot"><img src="assets/circle-light.svg" alt=""><img class="on" src="assets/circle-blue.svg" alt=""></span>
-    <img class="abs ico" src="assets/camera.png" alt="" style="left:11px;top:11px;width:13px;height:13px">
-    <span class="abs label t9 medium" style="top:30px">Camera<br>Feed</span>
-<svg class="abs lock" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.6 5.2V3.6a2.4 2.4 0 0 1 4.8 0v1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="5" width="8" height="6.6" rx="1.4" fill="currentColor"/></svg>
-    <span class="abs state"></span>
-  </button>
-  <button class="abs tile ctl" style="left:100px;top:66px" data-name="LiDAR point-cloud" data-win="lidar" aria-pressed="false">
-    <span class="bg"><img src="assets/tile.svg" alt=""><img class="on" src="assets/tile-active.svg" alt=""></span>
-    <span class="abs dot"><img src="assets/circle-light.svg" alt=""><img class="on" src="assets/circle-blue.svg" alt=""></span>
-    <img class="abs ico" src="assets/cloud.png" alt="" style="left:11px;top:11px;width:13px;height:13px">
-    <span class="abs label t9 medium" style="top:30px">LiDAR<br>Point-Cloud</span>
-<svg class="abs lock" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.6 5.2V3.6a2.4 2.4 0 0 1 4.8 0v1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="5" width="8" height="6.6" rx="1.4" fill="currentColor"/></svg>
-    <span class="abs state"></span>
-  </button>
-  <button class="abs tile ctl" style="left:22px;top:141px" data-name="Car" id="car-tile" aria-pressed="false">
+  <button class="abs tile ctl" style="left:22px;top:66px" data-name="Car" id="car-tile" aria-pressed="false">
     <span class="bg"><img src="assets/tile.svg" alt=""><img class="on" src="assets/tile-active.svg" alt=""></span>
     <span class="abs dot" style="top:8px"><img src="assets/circle-light.svg" alt=""><img class="on" src="assets/circle-blue.svg" alt=""></span>
     <img class="abs ico" src="assets/plug.png" alt="" style="left:10px;top:11px;width:16px;height:16px">
-    <span class="abs label t9 medium" style="top:31px">Connect<br>to Car</span>
-<svg class="abs lock" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.6 5.2V3.6a2.4 2.4 0 0 1 4.8 0v1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="5" width="8" height="6.6" rx="1.4" fill="currentColor"/></svg>
+    <span class="abs label t9 medium" style="top:31px">Connected<br>to Car</span>
     <span class="abs state"></span>
   </button>
-  <button class="abs tile ctl" style="left:100px;top:141px" data-name="Server" data-win="server" aria-pressed="false">
+  <button class="abs tile ctl" style="left:100px;top:66px" data-name="Server" data-win="server" aria-pressed="false">
     <span class="bg"><img src="assets/tile.svg" alt=""><img class="on" src="assets/tile-active.svg" alt=""></span>
     <span class="abs dot"><img src="assets/circle-light.svg" alt=""><img class="on" src="assets/circle-blue.svg" alt=""></span>
     <img class="abs ico" src="assets/wifi.png" alt="" style="left:10px;top:10px;width:15px;height:15px">
     <span class="abs label t9 medium" style="top:30px">Connect<br>to Server</span>
-<svg class="abs lock" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.6 5.2V3.6a2.4 2.4 0 0 1 4.8 0v1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="5" width="8" height="6.6" rx="1.4" fill="currentColor"/></svg>
     <span class="abs state"></span>
   </button>
 
+  <button class="abs tile ctl" style="left:22px;top:141px" data-name="Camera feed" data-win="camera" aria-pressed="false">
+    <span class="bg"><img src="assets/tile.svg" alt=""><img class="on" src="assets/tile-active.svg" alt=""></span>
+    <span class="abs dot"><img src="assets/circle-light.svg" alt=""><img class="on" src="assets/circle-blue.svg" alt=""></span>
+    <img class="abs ico" src="assets/camera.png" alt="" style="left:11px;top:11px;width:13px;height:13px">
+    <span class="abs label t9 medium" style="top:30px">Camera<br>Feed</span>
+    <span class="abs state"></span>
+  </button>
+  <button class="abs tile ctl" style="left:100px;top:141px" data-name="LiDAR point-cloud" data-win="lidar" aria-pressed="false">
+    <span class="bg"><img src="assets/tile.svg" alt=""><img class="on" src="assets/tile-active.svg" alt=""></span>
+    <span class="abs dot"><img src="assets/circle-light.svg" alt=""><img class="on" src="assets/circle-blue.svg" alt=""></span>
+    <img class="abs ico" src="assets/cloud.png" alt="" style="left:11px;top:11px;width:13px;height:13px">
+    <span class="abs label t9 medium" style="top:30px">LiDAR<br>Point-Cloud</span>
+    <span class="abs state"></span>
+  </button>
   <!-- Model selection -->
   <section class="abs panel ctl" aria-labelledby="model-title">
     <img class="bg" src="assets/model-panel.svg" alt="">
@@ -348,9 +403,6 @@
     <button class="abs help" id="help" aria-label="About models" aria-describedby="tip">
       <img class="img" src="assets/help.svg" alt=""><span>?</span>
     </button>
-    <div class="abs tip" id="tip" role="tooltip">
-      <b>Line Following</b> tracks lane markings. <b>Object Detection</b> spots obstacles and signs. <b>Street Mode</b> combines both for city driving.
-    </div>
     <img class="abs divider" src="assets/divider.svg" alt="">
     <img class="abs sel" id="sel" src="assets/model-selected.svg" alt="" style="top:60px">
     <div role="radiogroup" aria-labelledby="model-title">
@@ -371,6 +423,10 @@
       </button>
     </div>
   </section>
+  <!-- Sits outside the panel so it stays readable while the panel is faded -->
+  <div class="abs tip" id="tip" role="tooltip">
+    <b>Line Following</b> tracks lane markings. <b>Object Detection</b> spots obstacles and signs. <b>Street Mode</b> combines both for city driving.
+  </div>
 
   <!-- Max speed -->
   <div class="abs speed ctl" id="speed">
@@ -406,6 +462,7 @@
     <div class="fill" id="fill"><img src="assets/slider-fill.svg" alt=""></div>
     <img class="knob" id="knob" src="assets/slider-knob.svg" alt="">
     <span class="readout" id="readout"></span>
+  </div>
   </div>
 
   <p class="abs toast" id="toast" role="status" aria-live="polite" style="margin:0"></p>
@@ -454,118 +511,154 @@
   }
 
   /* ---------- App state ----------
-     Flow: power on → enter car IP → Connect to Car → the other three tiles unlock,
-     and each opens its own in-page window. */
-  const S = { power: false, car: 'off', server: 'off', wins: {} };
+     Two levels: a login card asks for the car IP. Once the car connects, the full control
+     panel is revealed. The car tile disconnects and returns to the login card.
+     The stop button in the header halts the car (and resumes it) without disconnecting. */
+  const S = { power: false, car: 'off', server: 'off', stopped: false, wins: {} };
   const ipRe = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
-  const ipValid = () => ipRe.test(ipInput.value.trim());
   const currentModel = () => $('.opt[aria-checked="true"]').dataset.model;
-  const power = $('#power'), carTile = $('#car-tile');
+  const stopBtn = $('#stop'), carTile = $('#car-tile');
   const winTiles = $$('.tile[data-win]');
+  const loginForm = $('#login-form'), loginIp = $('#login-ip'), loginField = $('#login-field'),
+        loginBtn = $('#login-btn'), loginErr = $('#login-err');
   const controls = () => $$('button.ctl, .ctl button, .ctl input, #slider');
 
   function render() {
-    const on = S.power;
+    const on = S.power;   // true while connected, i.e. the control panel is showing
     stage.classList.toggle('off', !on);
-    stage.classList.toggle('live', on && S.car === 'on');
-    power.setAttribute('aria-pressed', on);
+    stage.classList.toggle('login', !on);
+    stage.classList.toggle('live', on);
+    stage.classList.toggle('stopped', S.stopped);
+    stopBtn.setAttribute('aria-pressed', S.stopped);
+    stopBtn.setAttribute('aria-label', S.stopped ? 'Resume driving' : 'Stop the car');
+    stopBtn.title = S.stopped ? 'Resume driving' : 'Stop the car';
     controls().forEach(el => {
       if (el.id === 'slider') { el.tabIndex = on ? 0 : -1; el.setAttribute('aria-disabled', !on); }
       else el.disabled = !on;
     });
-    // IP is fixed while a car connection exists
-    ipInput.readOnly = S.car !== 'off';
-    if (document.activeElement !== ipInput) ipBox.classList.toggle('filled', !!ipInput.value.trim());
-    ipBox.classList.toggle('locked', S.car !== 'off');
 
-    // Connect to Car tile
-    const needsIp = on && S.car === 'off' && !ipValid();
-    carTile.classList.toggle('needs-ip', needsIp);
-    carTile.classList.toggle('busy', S.car === 'connecting');
-    carTile.setAttribute('aria-pressed', S.car === 'on');
-    carTile.setAttribute('aria-label', S.car === 'on' ? 'Disconnect from car' : 'Connect to car');
-    $('.state', carTile).textContent =
-      S.car === 'on' ? 'Connected' : S.car === 'connecting' ? 'Connecting…' : needsIp ? 'Needs IP' : '';
+    // Login card
+    const busy = S.car === 'connecting';
+    loginIp.readOnly = busy;
+    loginBtn.disabled = busy;
+    loginBtn.textContent = busy ? 'Connecting…' : 'Connect to Car';
+    loginField.classList.toggle('busy', busy);
 
-    // Locked tiles
-    const locked = on && S.car !== 'on';
+    // Control panel: the IP row shows the connected address, read-only
+    ipInput.value = on ? loginIp.value.trim() : '';
+    ipBox.classList.toggle('filled', on);
+
+    carTile.setAttribute('aria-pressed', on);
+    $('.state', carTile).textContent = on ? 'Disconnect' : '';
     winTiles.forEach(t => {
       const key = t.dataset.win;
-      t.classList.toggle('locked', locked);
-      t.setAttribute('aria-disabled', locked || !on);
       t.setAttribute('aria-pressed', !!S.wins[key]);
-      t.title = locked ? 'Connect to the car first' : '';
       $('.state', t).textContent = key === 'server'
         ? (S.server === 'on' ? 'Connected' : S.server === 'connecting' ? 'Connecting…' : '')
         : (S.wins[key] ? 'Live' : '');
     });
   }
 
-  function setPower(on) {
-    S.power = on;
-    if (!on) {
-      Object.keys(S.wins).forEach(k => closeWin(k, true));
-      S.car = 'off'; server.disconnect(true);
-      closeMenu();
-    }
-    render();
-    toast(on ? (ipValid() ? 'System on — ready to connect' : 'System on — enter the car IP') : 'System off');
-  }
-  power.addEventListener('click', () => setPower(!S.power));
-
-  /* Connect to Car */
+  /* Level 1 → 2: connect from the login card */
   let carTimer;
-  carTile.addEventListener('click', () => {
-    if (!S.power || S.car === 'connecting') return;
-    if (S.car === 'on') {
-      Object.keys(S.wins).forEach(k => closeWin(k, true));
-      server.disconnect(true);
-      S.car = 'off'; render();
-      toast('Disconnected from car');
+  function connect() {
+    if (S.car !== 'off') return;
+    const ip = loginIp.value.trim();
+    if (!ipRe.test(ip)) {
+      loginField.classList.remove('shake'); void loginField.offsetWidth; loginField.classList.add('shake');
+      loginField.classList.add('invalid');
+      loginErr.textContent = ip ? 'That IP address isn’t valid. Use four numbers 0–255, like 192.168.0.42.' : 'Enter the car’s IP address.';
+      loginIp.focus();
       return;
     }
-    if (!ipValid()) {
-      ipBox.classList.remove('shake'); void ipBox.offsetWidth; ipBox.classList.add('shake');
-      if (ipInput.value.trim()) ipBox.classList.add('invalid');
-      ipInput.focus();
-      toast(ipInput.value.trim() ? 'That IP address isn’t valid' : 'Enter the car’s IP address first');
-      return;
-    }
+    loginErr.textContent = '';
+    loginField.classList.remove('invalid');
     S.car = 'connecting'; render();
     clearTimeout(carTimer);
     carTimer = setTimeout(() => {
-      if (!S.power || S.car !== 'connecting') return;
-      S.car = 'on'; render();
-      winTiles.forEach(t => { t.classList.remove('unlocked-flash'); void t.offsetWidth; t.classList.add('unlocked-flash'); });
-      toast(`Connected to car at ${ipInput.value.trim()}`);
+      if (S.car !== 'connecting') return;
+      S.car = 'on'; S.power = true; render();
+      $$('.tile').forEach(t => { t.classList.remove('unlocked-flash'); void t.offsetWidth; t.classList.add('unlocked-flash'); });
+      carTile.focus({ preventScroll: true });
+      toast(`Connected to car at ${ip}`);
     }, 1100);
-  });
+  }
 
-  /* Locked / window tiles */
+  /* Level 2 → 1: disconnect and go back to the login card */
+  function disconnect() {
+    if (S.car !== 'on') return;
+    clearTimeout(carTimer);
+    Object.keys(S.wins).forEach(k => closeWin(k, true));
+    server.disconnect(true);
+    closeMenu();
+    S.car = 'off'; S.power = false; S.stopped = false; render();
+    loginIp.focus({ preventScroll: true });
+    toast('Disconnected from car');
+  }
+
+  /* Stop / resume the car (stays connected) */
+  function toggleStop() {
+    if (S.car !== 'on') return;
+    S.stopped = !S.stopped;
+    render();
+    toast(S.stopped ? 'Car stopped' : 'Resuming drive');
+    if (S.server === 'on') server.log(S.stopped ? 'stop command sent → car halted' : 'resume command sent → driving');
+  }
+
+  loginForm.addEventListener('submit', e => { e.preventDefault(); connect(); });
+  loginIp.addEventListener('input', () => {
+    loginIp.value = loginIp.value.replace(/[^\d.]/g, '');
+    loginField.classList.remove('invalid');
+    loginErr.textContent = '';
+  });
+  stopBtn.addEventListener('click', toggleStop);
+  carTile.addEventListener('click', disconnect);
+  carTile.title = 'Disconnect from car';
+  carTile.setAttribute('aria-label', 'Connected to car. Disconnect');
+
+  /* Window tiles */
   winTiles.forEach(t => t.addEventListener('click', () => {
-    if (!S.power) return;
-    if (S.car !== 'on') { toast('Connect to the car first'); return; }
+    if (S.car !== 'on') return;
     openWin(t.dataset.win);
   }));
 
   /* ---------- In-page windows ---------- */
   let zTop = 20;
   onScale = layoutChanged => {
-    Object.values(S.wins).forEach(w => { if (layoutChanged) placeWin(w); w.resize && w.resize(); });
+    Object.values(S.wins).forEach(w => { if (layoutChanged || w.full) placeWin(w); w.resize && w.resize(); });
     if (layoutChanged) setVol(vol);   // slider width differs between layouts
   };
   const WINS = {
-    camera: { title: 'Camera Feed',       icon: 'assets/camera.png', build: buildCamera,
+    camera: { title: 'Camera Feed',       icon: 'assets/camera.png', build: buildCamera, fullscreen: true,
               desk: { w: 206, h: 140, x: 172, y: 52 },  phone: { w: 248, h: 176, x: 6, y: 50 } },
-    lidar:  { title: 'LiDAR Point-Cloud', icon: 'assets/cloud.png',  build: buildLidar,
+    lidar:  { title: 'LiDAR Point-Cloud', icon: 'assets/cloud.png',  build: buildLidar, fullscreen: true,
               desk: { w: 206, h: 140, x: 234, y: 92 },  phone: { w: 248, h: 176, x: 6, y: 62 } },
     server: { title: 'Connect to Server', icon: 'assets/wifi.png',   build: buildServer,
               desk: { w: 176, h: 150, x: 204, y: 124 }, phone: { w: 248, h: 200, x: 6, y: 74 } },
   };
   const geom = def => isPhone ? def.phone : def.desk;
   function placeWin(win) {
+    if (win.full) {
+      // Cover the whole browser page: the stage sits centred and scaled, so work back to page edges in canvas units
+      const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+      Object.assign(win.el.style, {
+        left: -(vw - SW * stageScale) / 2 / stageScale + 'px', top: -(vh - SH * stageScale) / 2 / stageScale + 'px',
+        width: vw / stageScale + 'px', height: vh / stageScale + 'px' });
+      return;
+    }
     const g = geom(WINS[win.key]);
     Object.assign(win.el.style, { left: g.x + 'px', top: g.y + 'px', width: g.w + 'px', height: g.h + 'px' });
+  }
+
+  function setFull(win, on) {
+    win.full = on;
+    win.el.classList.toggle('full', on);
+    const b = $('.fs', win.el);
+    b.setAttribute('aria-label', `${on ? 'Exit full screen' : 'Full screen'}: ${WINS[win.key].title}`);
+    b.setAttribute('aria-pressed', on);
+    placeWin(win);
+    win.resize && win.resize();
+    focusWin(win.key);
   }
 
   function focusWin(key) {
@@ -586,6 +679,10 @@
       <header class="bar">
         <span class="wdot"><img src="${def.icon}" alt=""></span>
         <span class="ttl">${def.title}</span>
+        ${def.fullscreen ? `<button class="fs" aria-label="Full screen: ${def.title}" aria-pressed="false">
+          <svg class="grow" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3V1h2M5 1h2v2M7 5v2H5M3 7H1V5"/></svg>
+          <svg class="shrink" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 1v2H1M7 3H5V1M5 7V5h2M1 5h2v2"/></svg>
+        </button>` : ''}
         <button class="x" aria-label="Close ${def.title}"></button>
       </header>
       <div class="body"></div>`;
@@ -595,8 +692,10 @@
     placeWin(win);
     Object.assign(win, def.build(win.body, win) || {});
     $('.x', el).addEventListener('click', () => closeWin(key));
+    if (def.fullscreen) $('.fs', el).addEventListener('click', () => setFull(win, !win.full));
     el.addEventListener('pointerdown', () => focusWin(key), true);
-    el.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closeWin(key); } });
+    // Esc leaves full screen first, then closes the window
+    el.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); win.full ? setFull(win, false) : closeWin(key); } });
     makeDraggable(win, def);
     focusWin(key);
     el.focus({ preventScroll: true });
@@ -619,7 +718,7 @@
     const bar = $('.bar', win.el);
     let start = null;
     bar.addEventListener('pointerdown', e => {
-      if (e.target.closest('.x') || e.button > 0) return;
+      if (e.target.closest('.x, .fs') || e.button > 0 || win.full) return;
       e.preventDefault();
       start = { x: e.clientX, y: e.clientY, l: parseFloat(win.el.style.left), t: parseFloat(win.el.style.top) };
       bar.setPointerCapture(e.pointerId);
@@ -673,7 +772,7 @@
     body.classList.add('dark');
     const cv = makeCanvas(body), ctx = cv.ctx;
     const camH = 1.4, NEAR = 1.6;
-    let travelled = 0, fpsAcc = 0, fpsN = 0, fps = 60;
+    let travelled = 0, fpsAcc = 0, fpsN = 0, fps = 60, vNow = S.stopped ? 0 : 3 + curSpeed * 0.45;
     const rnd = (a, b) => a + Math.random() * (b - a);
     // Objects in camera coordinates: ego sits in the right lane, so lane edges are at x = -5.4, -1.8 (dashed) and 1.8
     const objs = [
@@ -695,8 +794,12 @@
       const { W, H } = cv;
       fpsAcc += dt; fpsN++;
       if (fpsAcc > .5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
-      const speedSetting = curSpeed;                // 1–99 from the Max Speed control
-      const v = 3 + speedSetting * 0.45;            // m/s
+      const speedSetting = curSpeed;                // 1–15 from the Max Speed control
+      // Ease toward the target speed so stopping and resuming look like braking and accelerating
+      const target = S.stopped ? 0 : 3 + speedSetting * 0.45;   // m/s
+      vNow += (target - vNow) * Math.min(1, dt * 2.5);
+      if (S.stopped && vNow < .05) vNow = 0;
+      const v = vNow;
       travelled += v * dt;
       const model = currentModel();
       const showLanes = model !== 'Object Detection';
@@ -819,6 +922,7 @@
       hudText(`${fps} FPS`, W - 4, 9.2, '#fff', 'right');
       hudText(model, 4, H - 4, '#fff');
       hudText(`${(v * 3.6).toFixed(0)} km/h · max ${speedSetting}`, W - 4, H - 4, '#fff', 'right');
+      if (S.stopped) hudText('■ STOPPED', W / 2 - 18, 9.2, '#ff6b6b');
     }
     function hudText(s, x, y, col, align = 'left') {
       ctx.font = '500 6px Archivo, sans-serif'; ctx.textAlign = align;
@@ -1057,15 +1161,15 @@
 
   /* Max speed dropdown */
   const speed = $('#speed'), sBtn = $('#speed-btn'), sVal = $('#speed-val'), menu = $('#speed-menu');
-  const speeds = [5, 10, 15, 20, 25, 30];
+  const speeds = [5, 10, 15];
   speeds.forEach(v => {
     const b = document.createElement('button');
     b.textContent = v; b.setAttribute('role', 'option'); b.tabIndex = -1;
     b.addEventListener('click', e => { e.stopPropagation(); setSpeed(v); closeMenu(); sVal.focus(); });
     menu.appendChild(b);
   });
-  // Max speed: type any whole number 1–99, or pick a preset from the menu.
-  const MIN_SPEED = 1, MAX_SPEED = 99;
+  // Max speed: type any whole number 1–15, or pick a preset from the menu.
+  const MIN_SPEED = 1, MAX_SPEED = 15;
   let curSpeed = 10;
   function markCur() {
     $$('button', menu).forEach(b => { const on = +b.textContent === curSpeed; b.classList.toggle('cur', on); b.setAttribute('aria-selected', on); });
@@ -1117,27 +1221,10 @@
   });
   document.addEventListener('click', e => { if (!speed.contains(e.target)) closeMenu(); if (e.target !== help) tip.classList.remove('show'); });
 
-  /* Car IP */
+  /* Car IP row on the control panel: shows the connected address, read-only */
   const ipBox = $('#ip'), ipInput = $('#ip-input');
-  ipInput.addEventListener('focus', () => { if (!ipInput.readOnly) ipBox.classList.add('editing'); });
-  ipInput.addEventListener('blur', () => {
-    ipBox.classList.remove('editing');
-    const v = ipInput.value.trim();
-    ipBox.classList.toggle('filled', !!v);
-    ipBox.classList.toggle('invalid', !!v && !ipRe.test(v));
-  });
-  ipInput.addEventListener('input', () => {
-    ipInput.value = ipInput.value.replace(/[^\d.]/g, '');
-    ipBox.classList.remove('invalid');
-    render();                                   // un-dims Connect to Car once the IP is valid
-  });
-  ipInput.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' || ipInput.readOnly) return;
-    const v = ipInput.value.trim();
-    if (!ipRe.test(v)) { ipBox.classList.add('invalid'); toast('Enter a valid car IP address'); return; }
-    ipInput.blur();
-    carTile.click();                            // Enter connects straight away
-  });
+  ipInput.readOnly = true;
+  ipBox.classList.add('locked');
 
   /* Volume slider: knob 13px on a 100px track; dark fill runs from the knob to the end */
   const slider = $('#slider'), knob = $('#knob'), fill = $('#fill'), readout = $('#readout'), volBtn = $('#vol-btn');
@@ -1180,6 +1267,7 @@
     if (vol) { lastVol = vol; setVol(0); toast('Muted'); } else { setVol(lastVol || 50); toast(`Volume ${vol}`); }
   });
   render();
+  if (!isPhone) loginIp.focus();   // phones would pop the keyboard straight away
 })();
 </script>
 </body>
